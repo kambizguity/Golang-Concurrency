@@ -18,15 +18,15 @@ func main() {
 
 	fmt.Printf("\nWait group:\n")
 	var wg sync.WaitGroup
-	// wg.Add(1)
-	// go CounterWaitGroup(1, 10, 100, &wg)
-	// wg.Wait()
+	wg.Add(1)
+	go CounterWaitGroup(1, 10, 100, &wg)
+	wg.Wait()
 
-	// wg.Add(1)
-	// go CounterWaitGroup(20, 30, 100, &wg)
-	// wg.Wait()
+	wg.Add(1)
+	go CounterWaitGroup(20, 30, 100, &wg)
+	wg.Wait()
 
-	fmt.Printf("\nChannels: Send message from channel to another one, PingPong Channels\n")
+	fmt.Print("Channels: Send message from channel to another one, PingPong Channels\n")
 
 	PingChannel := make(chan string)
 	PongChannel := make(chan string)
@@ -37,6 +37,32 @@ func main() {
 	wg.Add(1)
 	go SayWorld(&wg, PingChannel, PongChannel)
 	wg.Wait()
+
+	//Delay to complete tasks
+	time.Sleep(4 * time.Second)
+
+	//Send and recieve data are blocking in channels so
+	//Read data from any port is available with channel but i don't want to block any port after recieve the data
+	//I need to recieve data from port and proccess it as well as possible, So i need to put data into buffer channel.
+
+	fmt.Println("Buffer Channel")
+	logChannel := make(chan string, 10)
+	go printLog(logChannel)
+
+	for i := 0; i < 100; i++ {
+		fmt.Println("Push into channel", i)
+		logChannel <- fmt.Sprintf("Counter is %d", i)
+	}
+
+	fmt.Println("Channel Closed")
+}
+
+func printLog(ch chan string) {
+	for {
+		value := <-ch
+		fmt.Println("Pop Channel, :", value)
+		time.Sleep(time.Second)
+	}
 }
 
 func Counter(start int, end int, waitingTime int) {
